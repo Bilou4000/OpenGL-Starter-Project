@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 	string vertexFile = LoadShader("simpleVertex.shader");
 	const char *vertexShaderSource = vertexFile.c_str();
 
-	string fragmentFile = LoadShader("simpleFragment.shader");
+	string fragmentFile = LoadShader("blinkFragment.shader");
 	const char* fragmentShaderSource = fragmentFile.c_str();
 
 
@@ -147,6 +147,20 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
 		//DRAW
+ 
+		// Get the time in seconds 
+		float speed = 10.0f;
+		float timeValue = ((float)SDL_GetTicks() / 1000);
+		float redColor = (sin(timeValue * speed) / 2.0f) + 0.5f;
+		float greenColor = (sin(timeValue * speed + 2) / 2.0f) + 0.5f;
+		float blueColor = (sin(timeValue * speed + 4) / 2.0f) + 0.5f;
+
+		int colorLocation = glGetUniformLocation(shaderProgram, "shift");
+
+		glUseProgram(shaderProgram);
+		glUniform3f(colorLocation, redColor, greenColor, blueColor);
+
+
 		//Shader to use next
 		glUseProgram(shaderProgram);
 
