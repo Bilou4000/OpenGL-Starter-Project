@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 	///////////SETTING UP SDL/////////////
 	//Create a simple window
 	int width = 400;
-	int height = 300;
+	int height = 350;
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
 	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
 	//SDL_WINDOW_OPENGL is a u32 flag !
@@ -59,17 +59,19 @@ int main(int argc, char* argv[])
 	glViewport(0, 0, width, height);
 
 	//Put the color you want here for the background
-	glClearColor(0.6f, 0.2f, 0.2f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 
 	///////////// DATAS /////////////
 	//Make a triangle
 	//Describe the shape by its vertices
 	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+	// positions             // colors
+		0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+		0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
 	};
+
 
 	///////////// VBO /////////////
 	//Create an ID to be given at object generation
@@ -81,7 +83,7 @@ int main(int argc, char* argv[])
 	string vertexFile = LoadShader("simpleVertex.shader");
 	const char *vertexShaderSource = vertexFile.c_str();
 
-	string fragmentFile = LoadShader("blinkFragment.shader");
+	string fragmentFile = LoadShader("simpleFragment.shader");
 	const char* fragmentShaderSource = fragmentFile.c_str();
 
 
@@ -124,9 +126,13 @@ int main(int argc, char* argv[])
 
 	//Finally send the vertices array in the array buffer 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//Enable my vertex attrib array number 0 (we only have one attribute of position)
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	// Color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
 
 
 	///////////// MAIN RUN LOOP /////////////
@@ -147,22 +153,18 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
 		//DRAW
- 
 		// Get the time in seconds 
-		float speed = 10.0f;
+		float speed = 1.0f;
 		float timeValue = ((float)SDL_GetTicks() / 1000);
-		float redColor = (sin(timeValue * speed) / 2.0f) + 0.5f;
-		float greenColor = (sin(timeValue * speed + 2) / 2.0f) + 0.5f;
-		float blueColor = (sin(timeValue * speed + 4) / 2.0f) + 0.5f;
+		speed += sin(timeValue * speed / 2.0f);
+		float offset = (sin(timeValue * speed) / 2.0f);
 
-		int colorLocation = glGetUniformLocation(shaderProgram, "shift");
-
-		glUseProgram(shaderProgram);
-		glUniform3f(colorLocation, redColor, greenColor, blueColor);
-
+		int offsetLocation = glGetUniformLocation(shaderProgram, "offset");
 
 		//Shader to use next
 		glUseProgram(shaderProgram);
+
+		glUniform1f(offsetLocation, offset);
 
 		//VAO to use next
 		glBindVertexArray(vao);
