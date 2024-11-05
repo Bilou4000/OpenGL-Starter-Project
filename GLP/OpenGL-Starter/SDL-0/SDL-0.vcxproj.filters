@@ -29,5 +29,8 @@
     <None Include="blinkFragment.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
+    <None Include="staticVertex.shader">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
   </ItemGroup>
 </Project>

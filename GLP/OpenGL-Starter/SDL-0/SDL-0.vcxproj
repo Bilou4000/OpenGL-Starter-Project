@@ -88,6 +88,7 @@
     <None Include="blinkFragment.shader" />
     <None Include="simpleFragment.shader" />
     <None Include="simpleVertex.shader" />
+    <None Include="staticVertex.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
