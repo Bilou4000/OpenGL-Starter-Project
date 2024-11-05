@@ -2,11 +2,11 @@
 #include <fstream>
 #include <string>
 #include <vector>
+
 #include <SDL.h>
 #include <glew.h>
 
 using namespace std;
-//#define GLEW_STATIC
 
 //Shader
 const char* vertexShaderSource = "#version 330 core\n"
@@ -40,28 +40,20 @@ int main(int argc, char* argv[])
 	}
 
 	///////////SETTING UP SDL/////////////
-	//Create a simple window
 	int width = 800;
 	int height = 800;
+
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
 	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
-	//SDL_WINDOW_OPENGL is a u32 flag !
-
-
-	//Create an OpenGL compatible context to let glew draw on it
 	SDL_GLContext Context = SDL_GL_CreateContext(Window);
 
 	/////////SETTING UP OPENGL WITH GLEW///
-	//Initialize glew
 	glewExperimental = GL_TRUE;
 	if (glewInit() == GLEW_OK) {
 		cout << "Glew initialized successfully\n";
 	}
 
-	//Set the viewing frame through which we will see the objects
 	glViewport(0, 0, width, height);
-
-	//Put the color you want here for the background
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 
@@ -70,7 +62,6 @@ int main(int argc, char* argv[])
 	float appleScale = 0.02f;
 	float snakeScale = 0.05f;
 
-	//Describe the shape by its vertices
 	float vertices[] = {
 	// positions         //colors
 		//apple
@@ -88,9 +79,7 @@ int main(int argc, char* argv[])
 
 
 	///////////// VBO /////////////
-	//Create an ID to be given at object generation
 	unsigned int vbo;
-	//Pass how many buffers should be created and the reference of the ID to get the value set
 	glGenBuffers(1, &vbo);
 
 	//snake shader
@@ -119,7 +108,6 @@ int main(int argc, char* argv[])
 	glAttachShader(snakeShaderProgram, snakeFragmentId);
 	glLinkProgram(snakeShaderProgram);
 	glUseProgram(snakeShaderProgram);
-
 
 
 	//apple shader
@@ -151,26 +139,23 @@ int main(int argc, char* argv[])
 
 
 	///////////// VAO /////////////
-	//Create one ID to be given at object generation
 	unsigned int vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	//Binds the buffer linked to this ID to the vertex array buffer to be rendered. Put 0 instead of vbo to reset the value.
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-	//Finally send the vertices array in the array buffer 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// Position attribute
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 
 	///////////// MAIN RUN LOOP /////////////
-
+	//variables
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
+	//snake
 	float snakeOffsetX = 0.0f;
 	float snakeOffsetY = 0.0f;
 	float snakeSpeedX = 1.0f;
@@ -179,8 +164,8 @@ int main(int argc, char* argv[])
 	//apple
 	float appleOffsetX = 0.0f;
 	float appleOffsetY = 0.0f;
-
 	bool needNewApple = true;
+
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -223,6 +208,7 @@ int main(int argc, char* argv[])
 		deltaTime = timeValue - lastTime;
 		lastTime = timeValue;
 
+		//new pos of apple
 		if (needNewApple) {
 			appleOffsetX = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
 			appleOffsetY = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
@@ -243,23 +229,22 @@ int main(int argc, char* argv[])
 
 
 		/////// Snake ///////
-
 		//snake move
 		snakeOffsetX += deltaTime * snakeSpeedX / 2.0f;
 		snakeOffsetY += deltaTime * snakeSpeedY / 2.0f;
 
+		//collision between snake and apple
 		if (abs(snakeOffsetX - appleOffsetX) < appleScale + snakeScale && abs(snakeOffsetY - appleOffsetY) < appleScale + snakeScale) {
 			needNewApple = true;
 		}
 
-
 		//snake death
-		//if (snakeOffsetX >= 0.95f || snakeOffsetX <= -0.95f) {
-		//	//death
-		//}
-		//if (snakeOffsetY >= 0.95f || snakeOffsetY <= -0.95f) {
-		//	//death
-		//}
+		if (snakeOffsetX >= (1 - snakeScale) || snakeOffsetX <= -1 * (1 - snakeScale)) {
+			printf("YOU DIED\n");
+		}
+		if (snakeOffsetY >= (1 - snakeScale) || snakeOffsetY <= -1 * (1 - snakeScale)) {
+			printf("YOU DIED\n");
+		}
 
 		int offsetLocationX = glGetUniformLocation(snakeShaderProgram, "offsetX");
 		int offsetLocationY = glGetUniformLocation(snakeShaderProgram, "offsetY");
@@ -271,10 +256,9 @@ int main(int argc, char* argv[])
 
 		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
 
-		//VAO to use next
 		glBindVertexArray(vao);
 
-		SDL_GL_SwapWindow(Window); // Swapbuffer
+		SDL_GL_SwapWindow(Window);
 	}
 
 	// Quit
