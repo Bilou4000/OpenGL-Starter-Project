@@ -10,8 +10,8 @@ uniform float offset;
 
 void main()
 {
-    ourColor = color;
-    ourPos = vec3(pos.x * (offset * 2.0f) + offset, -pos.y * (offset * 2.0f), pos.z);
-    gl_Position = vec4(ourPos, 1.0);
+    //ourColor = color;
+    //ourPos = vec3(pos.x * (offset * 2.0f) + offset, -pos.y * (offset * 2.0f), pos.z);
+    gl_Position = vec4(pos, 1.0);
 
 }

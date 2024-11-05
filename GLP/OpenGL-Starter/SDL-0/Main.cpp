@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 	///////////SETTING UP SDL/////////////
 	//Create a simple window
 	int width = 400;
-	int height = 350;
+	int height = 400;
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
 	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
 	//SDL_WINDOW_OPENGL is a u32 flag !
@@ -63,13 +63,24 @@ int main(int argc, char* argv[])
 
 
 	///////////// DATAS /////////////
-	//Make a triangle
+	//Make a paper boat
 	//Describe the shape by its vertices
 	float vertices[] = {
-	// positions             // colors
-		0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
-		0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
+	// positions
+		// lower boat         
+		-0.8f, 0.0f, 0.0f,
+		-0.4f, 0.0f, 0.0f,
+		-0.4f, -0.45f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		0.0f, -0.45f, 0.0f,
+		0.4f, 0.0f, 0.0f,
+		0.4f, -0.45f, 0.0f,
+		0.8f, 0.0f, 0.0f,
+		// upper boat
+		-0.4f, 0.0f, 0.0f,
+		0.0f, 0.45f, 0.0f,
+		0.0f, 0.0f, 0.0f,
+		0.4f, 0.0f, 0.0f
 	};
 
 
@@ -127,11 +138,8 @@ int main(int argc, char* argv[])
 	//Finally send the vertices array in the array buffer 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
 
 
 
@@ -153,25 +161,16 @@ int main(int argc, char* argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
 		//DRAW
-		// Get the time in seconds 
-		float speed = 1.0f;
-		float timeValue = ((float)SDL_GetTicks() / 1000);
-		speed += sin(timeValue * speed / 2.0f);
-		float offset = (sin(timeValue * speed) / 2.0f);
-
-		int offsetLocation = glGetUniformLocation(shaderProgram, "offset");
 
 		//Shader to use next
 		glUseProgram(shaderProgram);
 
-		glUniform1f(offsetLocation, offset);
-
 		//VAO to use next
 		glBindVertexArray(vao);
 
-		//We draw from vertex 0 and we will be drawing 3 vertices
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
+		//We draw from vertex 0 and we will be drawing 8 vertices
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
+		glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
 
 		SDL_GL_SwapWindow(Window); // Swapbuffer
 	}
