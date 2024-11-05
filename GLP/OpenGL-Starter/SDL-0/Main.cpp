@@ -35,6 +35,11 @@ float MoveToward(float origin, float target, float amount)
 
 	return max(origin - amount, target);
 }
+float Sign(float value)
+{
+	if (value == 0.0f) return 0.0f;
+	return value < 0.0f ? -1.0f : 1.0f;
+}
 string LoadShader(string fileName);
 
 struct Position {
@@ -85,6 +90,8 @@ int main(int argc, char* argv[])
 	//Make a snake
 
 	std::vector<SnakeBodyPart> snakeBody;
+	snakeBody.push_back(SnakeBodyPart{});
+	SnakeBodyPart* headBodyPart = &snakeBody[0];
 
 	float appleScale = 0.02f;
 	float snakeScale = 0.05f;
@@ -183,8 +190,8 @@ int main(int argc, char* argv[])
 	float lastTime = 0.0f;
 
 	//snake
-	float snakeOffsetX = 0.0f;
-	float snakeOffsetY = 0.0f;
+	//float snakeOffsetX = 0.0f;
+	//float snakeOffsetY = 0.0f;
 	float snakeSpeedX = 1.0f;
 	float snakeSpeedY = 0.0f;
 	bool needNewSnakeBodyPart = false;
@@ -233,9 +240,9 @@ int main(int argc, char* argv[])
 					snakeSpeedX = 0.0f;
 				}
 
-				if ((previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() >= 1) {
-					for (int i = 0; i < snakeBody.size(); i++) {
-						snakeBody[i].nextPositions.push_back(Position{snakeOffsetX, snakeOffsetY});
+				if ((previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() > 1) {
+					for (int i = 1; i < snakeBody.size(); i++) {
+						snakeBody[i].nextPositions.push_back(Position{headBodyPart->posX, headBodyPart->posY});
 					}
 				}
 
@@ -270,35 +277,38 @@ int main(int argc, char* argv[])
 
 		/////// Snake ///////
 		//snake move
-		snakeOffsetX += deltaTime * snakeSpeedX / 2.0f;
-		snakeOffsetY += deltaTime * snakeSpeedY / 2.0f;
+		headBodyPart->posX += deltaTime * snakeSpeedX / 2.0f;
+		headBodyPart->posY += deltaTime * snakeSpeedY / 2.0f;
 
 		//collision between snake and apple
-		if (needNewSnakeBodyPart || abs(snakeOffsetX - appleOffsetX) < appleScale + snakeScale && abs(snakeOffsetY - appleOffsetY) < appleScale + snakeScale) {
+		if (needNewSnakeBodyPart || abs(headBodyPart->posX - appleOffsetX) < appleScale + snakeScale && abs(headBodyPart->posY - appleOffsetY) < appleScale + snakeScale) {
 			needNewApple = true;
 			needNewSnakeBodyPart = false;
-			if (snakeBody.size() >= 1) {
-				SnakeBodyPart bodyPart{};
-				bodyPart.posX = snakeBody.back().posX - snakeSpeedX * snakeScale * 2;
-				bodyPart.posY = snakeBody.back().posY - snakeSpeedY * snakeScale * 2;
-				bodyPart.nextPositions = snakeBody.back().nextPositions;
 
-				snakeBody.push_back(bodyPart);
-			}
-			else {
-				SnakeBodyPart bodyPart{};
-				bodyPart.posX = snakeOffsetX - snakeSpeedX * snakeScale * 2;
-				bodyPart.posY = snakeOffsetY - snakeSpeedY * snakeScale * 2;
+			SnakeBodyPart& lastBody = snakeBody.back();
 
-				snakeBody.push_back(bodyPart);
+			Position backward{ -snakeSpeedX, -snakeSpeedY };
+			if (snakeBody.size() > 1)
+			{
+				backward.x = Sign(lastBody.posX - (snakeBody.end() - 2)->posX);
+				backward.y = Sign(lastBody.posY - (snakeBody.end() - 2)->posY);
+				printf("%f %f\n", backward.x, backward.y);
 			}
+
+			SnakeBodyPart bodyPart{};
+			bodyPart.posX = lastBody.posX + backward.x * snakeScale * 2;
+			bodyPart.posY = lastBody.posY + backward.y * snakeScale * 2;
+			bodyPart.nextPositions = lastBody.nextPositions;
+
+			snakeBody.push_back(bodyPart);
+			headBodyPart = &snakeBody[0]; //reassign because of possible vector memory relocation
 		}
 
 		//snake death
-		if (snakeOffsetX >= (1 - snakeScale) || snakeOffsetX <= -1 * (1 - snakeScale)) {
+		if (headBodyPart->posX >= (1 - snakeScale) || headBodyPart->posX <= -1 * (1 - snakeScale)) {
 			printf("YOU DIED\n");
 		}
-		if (snakeOffsetY >= (1 - snakeScale) || snakeOffsetY <= -1 * (1 - snakeScale)) {
+		if (headBodyPart->posY >= (1 - snakeScale) || headBodyPart->posY <= -1 * (1 - snakeScale)) {
 			printf("YOU DIED\n");
 		}
 
@@ -307,12 +317,13 @@ int main(int argc, char* argv[])
 
 		glUseProgram(snakeShaderProgram);
 
-		glUniform1f(offsetLocationX, snakeOffsetX);
-		glUniform1f(offsetLocationY, snakeOffsetY);
+		glUniform1f(offsetLocationX, headBodyPart->posX);
+		glUniform1f(offsetLocationY, headBodyPart->posY);
 
 		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
+		//printf("%f %f\n", headBodyPart->posX, headBodyPart->posY);
 
-		for (int i = 0; i < snakeBody.size(); i++) {
+		for (int i = 1; i < snakeBody.size(); i++) {
 			SnakeBodyPart &bodyPart = snakeBody[i];
 
 			const float maxSteps = 32;
@@ -337,8 +348,8 @@ int main(int argc, char* argv[])
 			{
 				for (int step = 0; step < maxSteps; step++)
 				{
-					bodyPart.posX = MoveToward(bodyPart.posX, snakeOffsetX - snakeSpeedX * snakeScale * 2, movementStep);
-					bodyPart.posY = MoveToward(bodyPart.posY, snakeOffsetY - snakeSpeedY * snakeScale * 2, movementStep);
+					bodyPart.posX = MoveToward(bodyPart.posX, headBodyPart->posX - snakeSpeedX * snakeScale * 2, movementStep);
+					bodyPart.posY = MoveToward(bodyPart.posY, headBodyPart->posY - snakeSpeedY * snakeScale * 2, movementStep);
 				}
 			}
 
