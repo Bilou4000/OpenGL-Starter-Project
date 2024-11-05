@@ -83,10 +83,10 @@ int main(int argc, char* argv[])
 		0.2f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
 
 		//water
-		-1.0f, -0.5f, 0.0f, 0.357, 0.584, 0.831,
+		-1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831,
 		-1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
 		1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
-		1.0f, -0.5f, 0.0f, 0.357, 0.584, 0.831
+		1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831
 	};
 
 
@@ -215,14 +215,9 @@ int main(int argc, char* argv[])
 		lastTime = timeValue;
 
 		offsetX += deltaTime * speedX / 2.0f;
-		offsetY += deltaTime * speedY / 2.0f;
 
 		if (offsetX >= 0.6f || offsetX <= -0.6f) {
 			speedX = -speedX;
-		}
-
-		if (offsetY >= 0.75f || offsetY <= -0.75f) {
-			speedY = -speedY;
 		}
 
 		int offsetLocationX = glGetUniformLocation(shaderProgram, "offsetX");
