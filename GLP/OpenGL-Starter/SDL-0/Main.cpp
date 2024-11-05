@@ -24,7 +24,31 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "}\n\0";
 
 //Functions
+float Distance(float ax, float ay, float bx, float by);
+float MoveToward(float origin, float target, float amount)
+{
+	if (origin == target) return origin;
+	if (origin < target)
+	{
+		return min(origin + amount, target);
+	}
+
+	return max(origin - amount, target);
+}
 string LoadShader(string fileName);
+
+struct Position {
+	float x = 0.0f;
+	float y = 0.0f;
+};
+
+struct SnakeBodyPart 
+{
+	float posX = 0.0f;
+	float posY = 0.0f;
+
+	std::vector<Position> nextPositions;
+};
 
 int main(int argc, char* argv[])
 {
@@ -59,6 +83,9 @@ int main(int argc, char* argv[])
 
 	///////////// DATAS /////////////
 	//Make a snake
+
+	std::vector<SnakeBodyPart> snakeBody;
+
 	float appleScale = 0.02f;
 	float snakeScale = 0.05f;
 
@@ -160,6 +187,7 @@ int main(int argc, char* argv[])
 	float snakeOffsetY = 0.0f;
 	float snakeSpeedX = 1.0f;
 	float snakeSpeedY = 0.0f;
+	bool needNewSnakeBodyPart = false;
 
 	//apple
 	float appleOffsetX = 0.0f;
@@ -180,7 +208,14 @@ int main(int argc, char* argv[])
 				if (event.key.keysym.sym == SDLK_ESCAPE) {
 					isRunning = false;
 				}
+
+				if (event.key.keysym.sym == SDLK_g) {
+					needNewSnakeBodyPart = true;
+				}
+
 				//snake movement
+				Position previousDirection{ snakeSpeedX, snakeSpeedY };
+
 				if (event.key.keysym.sym == SDLK_z) {
 					snakeSpeedY = 1.0f;
 					snakeSpeedX = 0.0f;
@@ -197,8 +232,13 @@ int main(int argc, char* argv[])
 					snakeSpeedY = -1.0f;
 					snakeSpeedX = 0.0f;
 				}
-				break;
-			default:
+
+				if ((previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() >= 1) {
+					for (int i = 0; i < snakeBody.size(); i++) {
+						snakeBody[i].nextPositions.push_back(Position{snakeOffsetX, snakeOffsetY});
+					}
+				}
+
 				break;
 			}
 		} 
@@ -234,8 +274,24 @@ int main(int argc, char* argv[])
 		snakeOffsetY += deltaTime * snakeSpeedY / 2.0f;
 
 		//collision between snake and apple
-		if (abs(snakeOffsetX - appleOffsetX) < appleScale + snakeScale && abs(snakeOffsetY - appleOffsetY) < appleScale + snakeScale) {
+		if (needNewSnakeBodyPart || abs(snakeOffsetX - appleOffsetX) < appleScale + snakeScale && abs(snakeOffsetY - appleOffsetY) < appleScale + snakeScale) {
 			needNewApple = true;
+			needNewSnakeBodyPart = false;
+			if (snakeBody.size() >= 1) {
+				SnakeBodyPart bodyPart{};
+				bodyPart.posX = snakeBody.back().posX - snakeSpeedX * snakeScale * 2;
+				bodyPart.posY = snakeBody.back().posY - snakeSpeedY * snakeScale * 2;
+				bodyPart.nextPositions = snakeBody.back().nextPositions;
+
+				snakeBody.push_back(bodyPart);
+			}
+			else {
+				SnakeBodyPart bodyPart{};
+				bodyPart.posX = snakeOffsetX - snakeSpeedX * snakeScale * 2;
+				bodyPart.posY = snakeOffsetY - snakeSpeedY * snakeScale * 2;
+
+				snakeBody.push_back(bodyPart);
+			}
 		}
 
 		//snake death
@@ -256,6 +312,43 @@ int main(int argc, char* argv[])
 
 		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
 
+		for (int i = 0; i < snakeBody.size(); i++) {
+			SnakeBodyPart &bodyPart = snakeBody[i];
+
+			const float maxSteps = 32;
+			const float movementStep = deltaTime / 2.0f / maxSteps;
+
+			if (bodyPart.nextPositions.size() > 0) {
+
+				Position firstPos = bodyPart.nextPositions[0];
+
+				for (int step = 0; step < maxSteps; step++)
+				{
+					bodyPart.posX = MoveToward(bodyPart.posX, firstPos.x, movementStep);
+					bodyPart.posY = MoveToward(bodyPart.posY, firstPos.y, movementStep);
+				}
+
+				if (bodyPart.posX == firstPos.x && bodyPart.posY == firstPos.y)
+				{
+					bodyPart.nextPositions.erase(bodyPart.nextPositions.begin());
+				}
+			}
+			else
+			{
+				for (int step = 0; step < maxSteps; step++)
+				{
+					bodyPart.posX = MoveToward(bodyPart.posX, snakeOffsetX - snakeSpeedX * snakeScale * 2, movementStep);
+					bodyPart.posY = MoveToward(bodyPart.posY, snakeOffsetY - snakeSpeedY * snakeScale * 2, movementStep);
+				}
+			}
+
+			//render body part
+			glUniform1f(offsetLocationX, bodyPart.posX);
+			glUniform1f(offsetLocationY, bodyPart.posY);
+			glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
+
+		}
+
 		glBindVertexArray(vao);
 
 		SDL_GL_SwapWindow(Window);
@@ -266,6 +359,10 @@ int main(int argc, char* argv[])
 	SDL_GL_DeleteContext(Context);
 
 	return 0;
+}
+
+float Distance(float ax, float ay, float bx, float by) {
+	return sqrt(pow(ax - bx, 2) + pow(ay - by, 2));
 }
 
 string LoadShader(string fileName) {
