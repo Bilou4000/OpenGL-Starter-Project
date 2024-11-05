@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <SDL.h>
 #include <glew.h>
 
@@ -27,6 +28,8 @@ string LoadShader(string fileName);
 
 int main(int argc, char* argv[])
 {
+	std::srand(std::time(nullptr));
+
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
 	{
 		cout << "SDL initialization failed. SDL Error: " << SDL_GetError();
@@ -63,30 +66,24 @@ int main(int argc, char* argv[])
 
 
 	///////////// DATAS /////////////
-	//Make a paper boat
+	//Make a snake
+	float appleScale = 0.02f;
+	float snakeScale = 0.05f;
+
 	//Describe the shape by its vertices
 	float vertices[] = {
 	// positions         //colors
-		// lower boat         
-		-0.4f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		-0.2f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		-0.2f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.0f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		0.0f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.2f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		0.2f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.4f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		// upper boat
-		-0.2f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
-		0.0f, 0.25f, 0.0f, 0.961, 0.933, 0.922,
-		0.0f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
-		0.2f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
+		//apple
+		-appleScale, appleScale, 0.0f,
+		-appleScale, -appleScale, 0.0f,
+		appleScale, -appleScale, 0.0f,
+		appleScale, appleScale, 0.0f,
 
-		//water
-		-1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831,
-		-1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
-		1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
-		1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831
+		//snake
+		-snakeScale, snakeScale, 0.0f,
+		-snakeScale, -snakeScale, 0.0f,
+		snakeScale, -snakeScale, 0.0f,
+		snakeScale, snakeScale, 0.0f
 	};
 
 
@@ -96,68 +93,61 @@ int main(int argc, char* argv[])
 	//Pass how many buffers should be created and the reference of the ID to get the value set
 	glGenBuffers(1, &vbo);
 
-	//boat shader
-	string vertexFile = LoadShader("simpleVertex.shader");
-	const char *vertexShaderSource = vertexFile.c_str();
+	//snake shader
+	string vertexFile = LoadShader("snakeVertex.shader");
+	const char *snakeVertexShaderSource = vertexFile.c_str();
 
-	string fragmentFile = LoadShader("simpleFragment.shader");
-	const char* fragmentShaderSource = fragmentFile.c_str();
-
+	string fragmentFile = LoadShader("snakeFragment.shader");
+	const char* snakeFragmentShaderSource = fragmentFile.c_str();
 
 	//Vertex Shader
-	unsigned int vertexShaderId;
-	vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShaderId, 1, &vertexShaderSource, nullptr);
-	//Compile vertex shader
-	glCompileShader(vertexShaderId);
+	unsigned int snakeShaderId;
+	snakeShaderId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(snakeShaderId, 1, &snakeVertexShaderSource, nullptr);
+	glCompileShader(snakeShaderId);
 
 	//Fragment Shader
-	unsigned int fragmentShaderId;
-	fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShaderId, 1, &fragmentShaderSource, nullptr);
-	//Compile fragment shader
-	glCompileShader(fragmentShaderId);
+	unsigned int snakeFragmentId;
+	snakeFragmentId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(snakeFragmentId, 1, &snakeFragmentShaderSource, nullptr);
+	glCompileShader(snakeFragmentId);
 
-	//Create program to link the vertex and fragment shaders
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
+	unsigned int snakeShaderProgram;
+	snakeShaderProgram = glCreateProgram();
 
-	//Attach shaders to use to the program
-	glAttachShader(shaderProgram, vertexShaderId);
-	glAttachShader(shaderProgram, fragmentShaderId);
-
-	//Link it 
-	glLinkProgram(shaderProgram);
-	//now that the program is complete, we can use it 
-	glUseProgram(shaderProgram);
+	glAttachShader(snakeShaderProgram, snakeShaderId);
+	glAttachShader(snakeShaderProgram, snakeFragmentId);
+	glLinkProgram(snakeShaderProgram);
+	glUseProgram(snakeShaderProgram);
 
 
 
-	//water shader
-	vertexFile = LoadShader("staticVertex.shader");
-	const char* staticVertexShaderSource = vertexFile.c_str();
+	//apple shader
+	vertexFile = LoadShader("appleVertex.shader");
+	const char* appleVertexShaderSource = vertexFile.c_str();
 
+	fragmentFile = LoadShader("appleFragment.shader");
+	const char* appleFragmentShaderSource = fragmentFile.c_str();
 
 	//Vertex Shader
-	unsigned int staticVertexId;
-	staticVertexId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(staticVertexId, 1, &staticVertexShaderSource, nullptr);
-	//Compile vertex shader
-	glCompileShader(staticVertexId);
+	unsigned int appleShaderId;
+	appleShaderId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(appleShaderId, 1, &appleVertexShaderSource, nullptr);
+	glCompileShader(appleShaderId);
 
+	//Fragment Shader
+	unsigned int appleFragmentId;
+	appleFragmentId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(appleFragmentId, 1, &appleFragmentShaderSource, nullptr);
+	glCompileShader(appleFragmentId);
 
-	//Create program to link the vertex and fragment shaders
-	unsigned int staticShaderProgram;
-	staticShaderProgram = glCreateProgram();
+	unsigned int appleShaderProgram;
+	appleShaderProgram = glCreateProgram();
 
-	//Attach shaders to use to the program
-	glAttachShader(staticShaderProgram, staticVertexId);
-	glAttachShader(staticShaderProgram, fragmentShaderId);
-
-	//Link it 
-	glLinkProgram(staticShaderProgram);
-	//now that the program is complete, we can use it 
-	glUseProgram(staticShaderProgram);
+	glAttachShader(appleShaderProgram, appleShaderId);
+	glAttachShader(appleShaderProgram, appleFragmentId);
+	glLinkProgram(appleShaderProgram);
+	glUseProgram(appleShaderProgram);
 
 
 	///////////// VAO /////////////
@@ -172,12 +162,8 @@ int main(int argc, char* argv[])
 	//Finally send the vertices array in the array buffer 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
 
 
 	///////////// MAIN RUN LOOP /////////////
@@ -185,11 +171,16 @@ int main(int argc, char* argv[])
 	float deltaTime = 0.0f;
 	float lastTime = 0.0f;
 
-	float offsetX = 0.0f;
-	float offsetY = 0.0f;
-	float speedX = 2.0f;
-	float speedY = 2.0f;
+	float snakeOffsetX = 0.0f;
+	float snakeOffsetY = 0.0f;
+	float snakeSpeedX = 1.0f;
+	float snakeSpeedY = 0.0f;
 
+	//apple
+	float appleOffsetX = 0.0f;
+	float appleOffsetY = 0.0f;
+
+	bool needNewApple = true;
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -204,42 +195,84 @@ int main(int argc, char* argv[])
 				if (event.key.keysym.sym == SDLK_ESCAPE) {
 					isRunning = false;
 				}
+				//snake movement
+				if (event.key.keysym.sym == SDLK_z) {
+					snakeSpeedY = 1.0f;
+					snakeSpeedX = 0.0f;
+				}
+				else if (event.key.keysym.sym == SDLK_d) {
+					snakeSpeedY = 0.0f;
+					snakeSpeedX = 1.0f;
+				}
+				else if (event.key.keysym.sym == SDLK_q) {
+					snakeSpeedY = 0.0f;
+					snakeSpeedX = -1.0f;
+				}
+				else if (event.key.keysym.sym == SDLK_s) {
+					snakeSpeedY = -1.0f;
+					snakeSpeedX = 0.0f;
+				}
 				break;
 			default:
 				break;
 			}
-		}
+		} 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
-		glUseProgram(staticShaderProgram);
-		glDrawArrays(GL_TRIANGLE_FAN, 12, 4);
-
-		//DRAW
 		float timeValue = ((float)SDL_GetTicks() / 1000);
 		deltaTime = timeValue - lastTime;
 		lastTime = timeValue;
 
-		offsetX += deltaTime * speedX / 2.0f;
-
-		if (offsetX >= 0.6f || offsetX <= -0.6f) {
-			speedX = -speedX;
+		if (needNewApple) {
+			appleOffsetX = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
+			appleOffsetY = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
+			needNewApple = false;
 		}
 
-		int offsetLocationX = glGetUniformLocation(shaderProgram, "offsetX");
-		int offsetLocationY = glGetUniformLocation(shaderProgram, "offsetY");
+		//DRAW
+		/////// Apple ///////
+		int appleOffsetLocationX = glGetUniformLocation(appleShaderProgram, "offsetX");
+		int appleOffsetLocationY = glGetUniformLocation(appleShaderProgram, "offsetY");
 
-		//Shader to use next
-		glUseProgram(shaderProgram);
+		glUseProgram(appleShaderProgram);
 
-		glUniform1f(offsetLocationX, offsetX);
-		glUniform1f(offsetLocationY, offsetY);
+		glUniform1f(appleOffsetLocationX, appleOffsetX);
+		glUniform1f(appleOffsetLocationY, appleOffsetY);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+
+		/////// Snake ///////
+
+		//snake move
+		snakeOffsetX += deltaTime * snakeSpeedX / 2.0f;
+		snakeOffsetY += deltaTime * snakeSpeedY / 2.0f;
+
+		if (abs(snakeOffsetX - appleOffsetX) < appleScale + snakeScale && abs(snakeOffsetY - appleOffsetY) < appleScale + snakeScale) {
+			needNewApple = true;
+		}
+
+
+		//snake death
+		//if (snakeOffsetX >= 0.95f || snakeOffsetX <= -0.95f) {
+		//	//death
+		//}
+		//if (snakeOffsetY >= 0.95f || snakeOffsetY <= -0.95f) {
+		//	//death
+		//}
+
+		int offsetLocationX = glGetUniformLocation(snakeShaderProgram, "offsetX");
+		int offsetLocationY = glGetUniformLocation(snakeShaderProgram, "offsetY");
+
+		glUseProgram(snakeShaderProgram);
+
+		glUniform1f(offsetLocationX, snakeOffsetX);
+		glUniform1f(offsetLocationY, snakeOffsetY);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
 
 		//VAO to use next
 		glBindVertexArray(vao);
-
-		//We draw from vertex 0 and we will be drawing 8 vertices
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
-		glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
 
 		SDL_GL_SwapWindow(Window); // Swapbuffer
 	}
