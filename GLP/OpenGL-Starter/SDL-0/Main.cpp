@@ -8,40 +8,14 @@
 
 using namespace std;
 
-//Shader
-const char* vertexShaderSource = "#version 330 core\n"
-"in vec3 pos;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(pos, 1.0);\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"}\n\0";
-
 //Functions
 float Distance(float ax, float ay, float bx, float by);
-float MoveToward(float origin, float target, float amount)
-{
-	if (origin == target) return origin;
-	if (origin < target)
-	{
-		return min(origin + amount, target);
-	}
+float MoveToward(float origin, float target, float amount);
+float Sign(float value);
 
-	return max(origin - amount, target);
-}
-float Sign(float value)
-{
-	if (value == 0.0f) return 0.0f;
-	return value < 0.0f ? -1.0f : 1.0f;
-}
 string LoadShader(string fileName);
 
+//struct
 struct Position {
 	float x = 0.0f;
 	float y = 0.0f;
@@ -55,6 +29,7 @@ struct SnakeBodyPart
 	std::vector<Position> nextPositions;
 };
 
+//main
 int main(int argc, char* argv[])
 {
 	std::srand(std::time(nullptr));
@@ -190,8 +165,6 @@ int main(int argc, char* argv[])
 	float lastTime = 0.0f;
 
 	//snake
-	//float snakeOffsetX = 0.0f;
-	//float snakeOffsetY = 0.0f;
 	float snakeSpeedX = 1.0f;
 	float snakeSpeedY = 0.0f;
 	bool needNewSnakeBodyPart = false;
@@ -201,7 +174,10 @@ int main(int argc, char* argv[])
 	float appleOffsetY = 0.0f;
 	bool needNewApple = true;
 
+	bool isTurning = false;
 	bool isRunning = true;
+
+	Position previousDirection{};
 
 	while (isRunning) {
 		// Inputs
@@ -221,31 +197,44 @@ int main(int argc, char* argv[])
 				}
 
 				//snake movement
-				Position previousDirection{ snakeSpeedX, snakeSpeedY };
+				previousDirection = { snakeSpeedX, snakeSpeedY };
 
 				if (event.key.keysym.sym == SDLK_z) {
 					snakeSpeedY = 1.0f;
 					snakeSpeedX = 0.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_d) {
 					snakeSpeedY = 0.0f;
 					snakeSpeedX = 1.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_q) {
 					snakeSpeedY = 0.0f;
 					snakeSpeedX = -1.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_s) {
 					snakeSpeedY = -1.0f;
 					snakeSpeedX = 0.0f;
+					isTurning = true;
 				}
 
-				if ((previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() > 1) {
-					for (int i = 1; i < snakeBody.size(); i++) {
-						snakeBody[i].nextPositions.push_back(Position{headBodyPart->posX, headBodyPart->posY});
+				if(isTurning && ( previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY ) && snakeBody.size() > 1)
+				{
+					float headPosX = headBodyPart->posX;
+					float headPosy = headBodyPart->posY;
+
+					for(int i = 1; i < snakeBody.size(); i++)
+					{
+						snakeBody[i].nextPositions.push_back(Position{ headPosX, headPosy });
 					}
+					isTurning = false;
 				}
 
+
+				break;
+			default:
 				break;
 			}
 		} 
@@ -261,7 +250,7 @@ int main(int argc, char* argv[])
 			appleOffsetY = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
 			needNewApple = false;
 		}
-
+		
 		//DRAW
 		/////// Apple ///////
 		int appleOffsetLocationX = glGetUniformLocation(appleShaderProgram, "offsetX");
@@ -298,7 +287,6 @@ int main(int argc, char* argv[])
 			SnakeBodyPart bodyPart{};
 			bodyPart.posX = lastBody.posX + backward.x * snakeScale * 2;
 			bodyPart.posY = lastBody.posY + backward.y * snakeScale * 2;
-			bodyPart.nextPositions = lastBody.nextPositions;
 
 			snakeBody.push_back(bodyPart);
 			headBodyPart = &snakeBody[0]; //reassign because of possible vector memory relocation
@@ -321,23 +309,18 @@ int main(int argc, char* argv[])
 		glUniform1f(offsetLocationY, headBodyPart->posY);
 
 		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
-		//printf("%f %f\n", headBodyPart->posX, headBodyPart->posY);
+
+		const float movementStep = deltaTime / 2.0f;
 
 		for (int i = 1; i < snakeBody.size(); i++) {
 			SnakeBodyPart &bodyPart = snakeBody[i];
-
-			const float maxSteps = 32;
-			const float movementStep = deltaTime / 2.0f / maxSteps;
 
 			if (bodyPart.nextPositions.size() > 0) {
 
 				Position firstPos = bodyPart.nextPositions[0];
 
-				for (int step = 0; step < maxSteps; step++)
-				{
-					bodyPart.posX = MoveToward(bodyPart.posX, firstPos.x, movementStep);
-					bodyPart.posY = MoveToward(bodyPart.posY, firstPos.y, movementStep);
-				}
+				bodyPart.posX = MoveToward(bodyPart.posX, firstPos.x, movementStep);
+				bodyPart.posY = MoveToward(bodyPart.posY, firstPos.y, movementStep);
 
 				if (bodyPart.posX == firstPos.x && bodyPart.posY == firstPos.y)
 				{
@@ -346,11 +329,23 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				for (int step = 0; step < maxSteps; step++)
-				{
-					bodyPart.posX = MoveToward(bodyPart.posX, headBodyPart->posX - snakeSpeedX * snakeScale * 2, movementStep);
-					bodyPart.posY = MoveToward(bodyPart.posY, headBodyPart->posY - snakeSpeedY * snakeScale * 2, movementStep);
-				}
+				bodyPart.posX = MoveToward(bodyPart.posX, headBodyPart->posX - snakeSpeedX * snakeScale * 2, movementStep);
+				bodyPart.posY = MoveToward(bodyPart.posY, headBodyPart->posY - snakeSpeedY * snakeScale * 2, movementStep);
+
+				//SnakeBodyPart& previousBody = snakeBody[i-1];
+
+				//Position backward{ -snakeSpeedX, -snakeSpeedY };
+
+				//if(snakeBody.size() > 1)
+				//{
+				//	backward.x = Sign(previousBody.posX - snakeBody[i-1].posX);
+				//	backward.y = Sign(previousBody.posY - snakeBody[i-1].posY);
+				//	printf("%f %f\n", backward.x, backward.y);
+				//}
+
+				////SnakeBodyPart bodyPart{};
+				//bodyPart.posX = previousBody.posX + backward.x * snakeScale * 2;
+				//bodyPart.posY = previousBody.posY + backward.y * snakeScale * 2;
 			}
 
 			//render body part
@@ -372,8 +367,31 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+float MoveToward(float origin, float target, float amount)
+{
+	if(origin == target)
+	{
+		return origin;
+	}
+	if(origin < target)
+	{
+		return min(origin + amount, target);
+	}
+
+	return max(origin - amount, target);
+}
+
 float Distance(float ax, float ay, float bx, float by) {
 	return sqrt(pow(ax - bx, 2) + pow(ay - by, 2));
+}
+
+float Sign(float value)
+{
+	if(value == 0.0f)
+	{ 
+		return 0.0f;
+	};
+	return value < 0.0f ? -1.0f : 1.0f;
 }
 
 string LoadShader(string fileName) {
