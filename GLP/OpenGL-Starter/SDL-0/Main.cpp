@@ -1,26 +1,12 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <string>
+
 #include <SDL.h>
 #include <glew.h>
 
 using namespace std;
 //#define GLEW_STATIC
-
-//Shader
-const char* vertexShaderSource = "#version 330 core\n"
-"in vec3 pos;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(pos, 1.0);\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"}\n\0";
 
 //Functions
 string LoadShader(string fileName);
