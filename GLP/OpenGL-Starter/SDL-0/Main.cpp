@@ -173,6 +173,7 @@ int main(int argc, char* argv[])
 
 	Position previousDirection{};
 
+	bool isTurning = false;
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -198,25 +199,25 @@ int main(int argc, char* argv[])
 				if (event.key.keysym.sym == SDLK_z) {
 					snakeSpeedY = 1.0f;
 					snakeSpeedX = 0.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_d) {
 					snakeSpeedY = 0.0f;
 					snakeSpeedX = 1.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_q) {
 					snakeSpeedY = 0.0f;
 					snakeSpeedX = -1.0f;
+					isTurning = true;
 				}
 				else if (event.key.keysym.sym == SDLK_s) {
 					snakeSpeedY = -1.0f;
 					snakeSpeedX = 0.0f;
+					isTurning = true;
 				}
 
-				if ((previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() > 1) {
-					for (int i = 1; i < snakeBody.size(); i++) {
-						snakeBody[i].nextPositions.push_back(Position{headBodyPart->posX, headBodyPart->posY});
-					}
-				}
+				
 				break;
 			default:
 				break;
@@ -252,6 +253,15 @@ int main(int argc, char* argv[])
 		//snake move
 		headBodyPart->posX += deltaTime * snakeSpeedX / 2.0f;
 		headBodyPart->posY += deltaTime * snakeSpeedY / 2.0f;
+
+		if (isTurning && (previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() > 1)
+		{
+			for (int i = 1; i < snakeBody.size(); i++)
+			{
+				snakeBody[i].nextPositions.push_back(Position { headBodyPart->posX, headBodyPart->posY });
+			}
+			isTurning = false;
+		}
 
 		//collision between snake and apple
 		if (needNewSnakeBodyPart || abs(headBodyPart->posX - appleOffsetX) < appleScale + snakeScale && abs(headBodyPart->posY - appleOffsetY) < appleScale + snakeScale) {
@@ -293,7 +303,7 @@ int main(int argc, char* argv[])
 		glUniform1f(offsetLocationX, headBodyPart->posX);
 		glUniform1f(offsetLocationY, headBodyPart->posY);
 
-		glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
+		glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
 
 		for (int i = 1; i < snakeBody.size(); i++) {
 			SnakeBodyPart &bodyPart = snakeBody[i];
@@ -314,14 +324,23 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				bodyPart.posX = MoveToward(bodyPart.posX, headBodyPart->posX - snakeSpeedX * snakeScale * 2, movementStep);
-				bodyPart.posY = MoveToward(bodyPart.posY, headBodyPart->posY - snakeSpeedY * snakeScale * 2, movementStep);
+				SnakeBodyPart& lastBody = snakeBody[i - 1];
+
+				Position backward { -snakeSpeedX, -snakeSpeedY };
+				if (i > 1)
+				{
+					backward.x = Sign(lastBody.posX - snakeBody[i - 2].posX);
+					backward.y = Sign(lastBody.posY - snakeBody[i - 2].posY);
+				}
+
+				bodyPart.posX = lastBody.posX + backward.x * snakeScale * 2;
+				bodyPart.posY = lastBody.posY + backward.y * snakeScale * 2;
 			}
 
 			//render body part
 			glUniform1f(offsetLocationX, bodyPart.posX);
 			glUniform1f(offsetLocationY, bodyPart.posY);
-			glDrawArrays(GL_TRIANGLE_FAN, 4, 8);
+			glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
 
 		}
 
