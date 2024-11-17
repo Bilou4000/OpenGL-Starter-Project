@@ -24,5 +24,5 @@ void main()
 {
     vec2 pos = (gl_FragCoord.xy - 0.5 * vec2(1280,720))/1280;
     float color = Fractal(pos)
-    FragColor = vec4(color, 1.0f);
+    FragColor = vec4(233,0,0, 1.0f);
 }
