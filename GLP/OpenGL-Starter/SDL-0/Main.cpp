@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
 
 	///////////SETTING UP SDL/////////////
 	//Create a simple window
-	int width = 800;
-	int height = 800;
+	int width = 1280;
+	int height = 720;
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
 	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
 	//SDL_WINDOW_OPENGL is a u32 flag !
@@ -47,35 +47,6 @@ int main(int argc, char* argv[])
 	//Put the color you want here for the background
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-
-	///////////// DATAS /////////////
-	//Make a paper boat
-	//Describe the shape by its vertices
-	float vertices[] = {
-	// positions         //colors
-		// lower boat         
-		-0.4f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		-0.2f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		-0.2f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.0f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		0.0f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.2f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		0.2f, -0.25f, 0.0f, 0.231, 0.18, 0.161,
-		0.4f, 0.0f, 0.0f, 0.412, 0.318, 0.275,
-		// upper boat
-		-0.2f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
-		0.0f, 0.25f, 0.0f, 0.961, 0.933, 0.922,
-		0.0f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
-		0.2f, 0.0f, 0.0f, 0.769, 0.647, 0.592,
-
-		//water
-		-1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831,
-		-1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
-		1.0f, -1.0f, 0.0f, 0.357, 0.584, 0.831,
-		1.0f, -0.15f, 0.0f, 0.357, 0.584, 0.831
-	};
-
-
 	///////////// VBO /////////////
 	//Create an ID to be given at object generation
 	unsigned int vbo;
@@ -83,7 +54,7 @@ int main(int argc, char* argv[])
 	glGenBuffers(1, &vbo);
 
 	//boat shader
-	string vertexFile = LoadShader("simpleVertex.shader");
+	string vertexFile = LoadShader("staticVertex.shader");
 	const char *vertexShaderSource = vertexFile.c_str();
 
 	string fragmentFile = LoadShader("simpleFragment.shader");
@@ -118,34 +89,6 @@ int main(int argc, char* argv[])
 	glUseProgram(shaderProgram);
 
 
-
-	//water shader
-	vertexFile = LoadShader("staticVertex.shader");
-	const char* staticVertexShaderSource = vertexFile.c_str();
-
-
-	//Vertex Shader
-	unsigned int staticVertexId;
-	staticVertexId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(staticVertexId, 1, &staticVertexShaderSource, nullptr);
-	//Compile vertex shader
-	glCompileShader(staticVertexId);
-
-
-	//Create program to link the vertex and fragment shaders
-	unsigned int staticShaderProgram;
-	staticShaderProgram = glCreateProgram();
-
-	//Attach shaders to use to the program
-	glAttachShader(staticShaderProgram, staticVertexId);
-	glAttachShader(staticShaderProgram, fragmentShaderId);
-
-	//Link it 
-	glLinkProgram(staticShaderProgram);
-	//now that the program is complete, we can use it 
-	glUseProgram(staticShaderProgram);
-
-
 	///////////// VAO /////////////
 	//Create one ID to be given at object generation
 	unsigned int vao;
@@ -155,27 +98,8 @@ int main(int argc, char* argv[])
 	//Binds the buffer linked to this ID to the vertex array buffer to be rendered. Put 0 instead of vbo to reset the value.
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	//Finally send the vertices array in the array buffer 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// Position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// Color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
 
 	///////////// MAIN RUN LOOP /////////////
-
-	float deltaTime = 0.0f;
-	float lastTime = 0.0f;
-
-	float offsetX = 0.0f;
-	float offsetY = 0.0f;
-	float speedX = 2.0f;
-	float speedY = 2.0f;
-
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -196,37 +120,15 @@ int main(int argc, char* argv[])
 			}
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
-
-		glUseProgram(staticShaderProgram);
-		glDrawArrays(GL_TRIANGLE_FAN, 12, 4);
-
 		//DRAW
-		float timeValue = ((float)SDL_GetTicks() / 1000);
-		deltaTime = timeValue - lastTime;
-		lastTime = timeValue;
-
-		offsetX += deltaTime * speedX / 2.0f;
-
-		if (offsetX >= 0.6f || offsetX <= -0.6f) {
-			speedX = -speedX;
-		}
-
-		int offsetLocationX = glGetUniformLocation(shaderProgram, "offsetX");
-		int offsetLocationY = glGetUniformLocation(shaderProgram, "offsetY");
 
 		//Shader to use next
 		glUseProgram(shaderProgram);
-
-		glUniform1f(offsetLocationX, offsetX);
-		glUniform1f(offsetLocationY, offsetY);
 
 		//VAO to use next
 		glBindVertexArray(vao);
 
 		//We draw from vertex 0 and we will be drawing 8 vertices
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 8);
-		glDrawArrays(GL_TRIANGLE_STRIP, 8, 4);
-
 		SDL_GL_SwapWindow(Window); // Swapbuffer
 	}
 
