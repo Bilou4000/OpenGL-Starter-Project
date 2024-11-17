@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	///////////// MAIN RUN LOOP /////////////
+	float time = 0;
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -126,9 +127,13 @@ int main(int argc, char* argv[])
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
+		time += 0.001f;
+
 		//DRAW
+		float fractalMovement = glGetUniformLocation(fractalShaderProgram, "time");
 		glUseProgram(fractalShaderProgram);
-		//glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+		glUniform1f(fractalMovement, time);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glBindVertexArray(vao);

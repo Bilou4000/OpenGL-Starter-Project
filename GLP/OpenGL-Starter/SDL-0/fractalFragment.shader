@@ -1,17 +1,17 @@
 #version 330 core
 
 out vec4 FragColor;
-//in vec3 ourColor;
+uniform float time;
 
 float Fractal(vec2 p)
 {
     vec2 c = p;
     vec2 z = c;
-    float maxIteration = 1000;
+    float maxIteration = 50;
 
     for(int i = 0; i < maxIteration; i++)
     {
-        z = vec2(z.x * z.x - z.y * z.y, 2 * z.x * z.y) + vec2(0.355 , 0.335);
+        z = vec2(z.x * z.x - z.y * z.y, 2 * z.x * z.y) + vec2(time, 0.8);
 
         if(z.x * z.x + z.y * z.y > 4)
         {
