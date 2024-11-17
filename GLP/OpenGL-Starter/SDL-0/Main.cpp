@@ -1,36 +1,18 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <string>
-#include <vector>
 
 #include <SDL.h>
 #include <glew.h>
 
 using namespace std;
+//#define GLEW_STATIC
 
 //Functions
-float Distance(float ax, float ay, float bx, float by);
-float MoveToward(float origin, float target, float amount);
-float Sign(float value);
 string LoadShader(string fileName);
-
-struct Position {
-	float x = 0.0f;
-	float y = 0.0f;
-};
-
-struct SnakeBodyPart 
-{
-	float posX = 0.0f;
-	float posY = 0.0f;
-
-	std::vector<Position> nextPositions;
-};
 
 int main(int argc, char* argv[])
 {
-	std::srand(std::time(nullptr));
-
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
 	{
 		cout << "SDL initialization failed. SDL Error: " << SDL_GetError();
@@ -41,11 +23,10 @@ int main(int argc, char* argv[])
 	}
 
 	///////////SETTING UP SDL/////////////
-	int width = 800;
-	int height = 800;
-
+	int width = 1280;
+	int height = 720;
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
-	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
+	SDL_Window* Window = SDL_CreateWindow("FRACTAL", center, center, width, height, SDL_WINDOW_OPENGL);
 	SDL_GLContext Context = SDL_GL_CreateContext(Window);
 
 	/////////SETTING UP OPENGL WITH GLEW///
@@ -57,30 +38,18 @@ int main(int argc, char* argv[])
 	glViewport(0, 0, width, height);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-
 	///////////// DATAS /////////////
-	//Make a snake
-
-	std::vector<SnakeBodyPart> snakeBody;
-	snakeBody.push_back(SnakeBodyPart{});
-	SnakeBodyPart* headBodyPart = &snakeBody[0];
-
-	float appleScale = 0.02f;
-	float snakeScale = 0.05f;
-
 	float vertices[] = {
-	// positions         //colors
-		//apple
-		-appleScale, appleScale, 0.0f,
-		-appleScale, -appleScale, 0.0f,
-		appleScale, -appleScale, 0.0f,
-		appleScale, appleScale, 0.0f,
+		-1.0f, -1.0f, -0.0f,
+		1.0f, 1.0f, -0.0f,
+		-1.0f, 1.0f, -0.0f,
+		1.0f, -1.0f, -0.0f
+	};
 
-		//snake
-		-snakeScale, snakeScale, 0.0f,
-		-snakeScale, -snakeScale, 0.0f,
-		snakeScale, -snakeScale, 0.0f,
-		snakeScale, snakeScale, 0.0f
+	unsigned int indices[] =
+	{
+		0, 1, 2,
+		0, 3, 1
 	};
 
 
@@ -88,60 +57,33 @@ int main(int argc, char* argv[])
 	unsigned int vbo;
 	glGenBuffers(1, &vbo);
 
-	//snake shader
-	string vertexFile = LoadShader("snakeVertex.shader");
-	const char *snakeVertexShaderSource = vertexFile.c_str();
+	//boat shader
+	string vertexFile = LoadShader("fractalVertex.shader");
+	const char* fractalVertexShaderSource = vertexFile.c_str();
 
-	string fragmentFile = LoadShader("snakeFragment.shader");
-	const char* snakeFragmentShaderSource = fragmentFile.c_str();
+	string fragmentFile = LoadShader("fractalFragment.shader");
+	const char* fractalFragmentShaderSource = fragmentFile.c_str();
+
 
 	//Vertex Shader
-	unsigned int snakeShaderId;
-	snakeShaderId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(snakeShaderId, 1, &snakeVertexShaderSource, nullptr);
-	glCompileShader(snakeShaderId);
+	unsigned int fractalShaderId;
+	fractalShaderId = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(fractalShaderId, 1, &fractalVertexShaderSource, nullptr);
+	glCompileShader(fractalShaderId);
 
 	//Fragment Shader
-	unsigned int snakeFragmentId;
-	snakeFragmentId = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(snakeFragmentId, 1, &snakeFragmentShaderSource, nullptr);
-	glCompileShader(snakeFragmentId);
+	unsigned int fractalFragmentId;
+	fractalFragmentId = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fractalFragmentId, 1, &fractalFragmentShaderSource, nullptr);
+	glCompileShader(fractalFragmentId);
 
-	unsigned int snakeShaderProgram;
-	snakeShaderProgram = glCreateProgram();
+	unsigned int fractalShaderProgram;
+	fractalShaderProgram = glCreateProgram();
 
-	glAttachShader(snakeShaderProgram, snakeShaderId);
-	glAttachShader(snakeShaderProgram, snakeFragmentId);
-	glLinkProgram(snakeShaderProgram);
-	glUseProgram(snakeShaderProgram);
-
-
-	//apple shader
-	vertexFile = LoadShader("appleVertex.shader");
-	const char* appleVertexShaderSource = vertexFile.c_str();
-
-	fragmentFile = LoadShader("appleFragment.shader");
-	const char* appleFragmentShaderSource = fragmentFile.c_str();
-
-	//Vertex Shader
-	unsigned int appleShaderId;
-	appleShaderId = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(appleShaderId, 1, &appleVertexShaderSource, nullptr);
-	glCompileShader(appleShaderId);
-
-	//Fragment Shader
-	unsigned int appleFragmentId;
-	appleFragmentId = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(appleFragmentId, 1, &appleFragmentShaderSource, nullptr);
-	glCompileShader(appleFragmentId);
-
-	unsigned int appleShaderProgram;
-	appleShaderProgram = glCreateProgram();
-
-	glAttachShader(appleShaderProgram, appleShaderId);
-	glAttachShader(appleShaderProgram, appleFragmentId);
-	glLinkProgram(appleShaderProgram);
-	glUseProgram(appleShaderProgram);
+	glAttachShader(fractalShaderProgram, fractalShaderId);
+	glAttachShader(fractalShaderProgram, fractalFragmentId);
+	glLinkProgram(fractalShaderProgram);
+	glUseProgram(fractalShaderProgram);
 
 
 	///////////// VAO /////////////
@@ -152,28 +94,18 @@ int main(int argc, char* argv[])
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
 	glEnableVertexAttribArray(0);
 
+	///////////// EBO /////////////
+	unsigned int ebo;
+	glGenBuffers(1, &ebo);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	///////////// MAIN RUN LOOP /////////////
-	//variables
-	float deltaTime = 0.0f;
-	float lastTime = 0.0f;
-
-	//snake
-	float snakeSpeedX = 1.0f;
-	float snakeSpeedY = 0.0f;
-	bool needNewSnakeBodyPart = false;
-
-	//apple
-	float appleOffsetX = 0.0f;
-	float appleOffsetY = 0.0f;
-	bool needNewApple = true;
-
-	Position previousDirection{};
-
-	bool isTurning = false;
+	float time = 0;
 	bool isRunning = true;
 
 	while (isRunning) {
@@ -188,165 +120,34 @@ int main(int argc, char* argv[])
 				if (event.key.keysym.sym == SDLK_ESCAPE) {
 					isRunning = false;
 				}
-
-				if (event.key.keysym.sym == SDLK_g) {
-					needNewSnakeBodyPart = true;
-				}
-
-				//snake movement
-				previousDirection = { snakeSpeedX, snakeSpeedY };
-
-				if (event.key.keysym.sym == SDLK_z) {
-					snakeSpeedY = 1.0f;
-					snakeSpeedX = 0.0f;
-					isTurning = true;
-				}
-				else if (event.key.keysym.sym == SDLK_d) {
-					snakeSpeedY = 0.0f;
-					snakeSpeedX = 1.0f;
-					isTurning = true;
-				}
-				else if (event.key.keysym.sym == SDLK_q) {
-					snakeSpeedY = 0.0f;
-					snakeSpeedX = -1.0f;
-					isTurning = true;
-				}
-				else if (event.key.keysym.sym == SDLK_s) {
-					snakeSpeedY = -1.0f;
-					snakeSpeedX = 0.0f;
-					isTurning = true;
-				}
-
-				
 				break;
 			default:
 				break;
 			}
-		} 
+		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear the screen
 
-		float timeValue = ((float)SDL_GetTicks() / 1000);
-		deltaTime = timeValue - lastTime;
-		lastTime = timeValue;
+		time += 0.001f;
 
-		//new pos of apple
-		if (needNewApple) {
-			appleOffsetX = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
-			appleOffsetY = ((std::rand() % 200) - (100 - appleScale * 100)) / 100;
-			needNewApple = false;
-		}
+		// shifting color like rgb
+		//float speed = 0.5f;
+		//float timeValue = ((float) SDL_GetTicks() / 1000);
+		//float redColor = (sin(timeValue * speed) / 2.0f) + 0.5f;
+		//float greenColor = (sin(timeValue * speed + 2) / 2.0f) + 0.5f;
+		//float blueColor = (sin(timeValue * speed + 4) / 2.0f) + 0.5f;
 
 		//DRAW
-		/////// Apple ///////
-		int appleOffsetLocationX = glGetUniformLocation(appleShaderProgram, "offsetX");
-		int appleOffsetLocationY = glGetUniformLocation(appleShaderProgram, "offsetY");
+		float fractalMovement = glGetUniformLocation(fractalShaderProgram, "time");
+		int colorLocation = glGetUniformLocation(fractalShaderProgram, "colorShift");
+		glUseProgram(fractalShaderProgram);
 
-		glUseProgram(appleShaderProgram);
-
-		glUniform1f(appleOffsetLocationX, appleOffsetX);
-		glUniform1f(appleOffsetLocationY, appleOffsetY);
-
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-
-		/////// Snake ///////
-		//snake move
-		headBodyPart->posX += deltaTime * snakeSpeedX / 2.0f;
-		headBodyPart->posY += deltaTime * snakeSpeedY / 2.0f;
-
-		if (isTurning && (previousDirection.x != snakeSpeedX || previousDirection.y != snakeSpeedY) && snakeBody.size() > 1)
-		{
-			for (int i = 1; i < snakeBody.size(); i++)
-			{
-				snakeBody[i].nextPositions.push_back(Position { headBodyPart->posX, headBodyPart->posY });
-			}
-			isTurning = false;
-		}
-
-		//collision between snake and apple
-		if (needNewSnakeBodyPart || abs(headBodyPart->posX - appleOffsetX) < appleScale + snakeScale && abs(headBodyPart->posY - appleOffsetY) < appleScale + snakeScale) {
-			needNewApple = true;
-			needNewSnakeBodyPart = false;
-
-			SnakeBodyPart& lastBody = snakeBody.back();
-
-			Position backward{ -snakeSpeedX, -snakeSpeedY };
-			if (snakeBody.size() > 1)
-			{
-				backward.x = Sign(lastBody.posX - (snakeBody.end() - 2)->posX);
-				backward.y = Sign(lastBody.posY - (snakeBody.end() - 2)->posY);
-				printf("%f %f\n", backward.x, backward.y);
-			}
-
-			SnakeBodyPart bodyPart{};
-			bodyPart.posX = lastBody.posX + backward.x * snakeScale * 2;
-			bodyPart.posY = lastBody.posY + backward.y * snakeScale * 2;
-			bodyPart.nextPositions = lastBody.nextPositions;
-
-			snakeBody.push_back(bodyPart);
-			headBodyPart = &snakeBody[0]; //reassign because of possible vector memory relocation
-		}
-
-		//snake death
-		if (headBodyPart->posX >= (1 - snakeScale) || headBodyPart->posX <= -1 * (1 - snakeScale)) {
-			printf("YOU DIED\n");
-		}
-		if (headBodyPart->posY >= (1 - snakeScale) || headBodyPart->posY <= -1 * (1 - snakeScale)) {
-			printf("YOU DIED\n");
-		}
-
-		int offsetLocationX = glGetUniformLocation(snakeShaderProgram, "offsetX");
-		int offsetLocationY = glGetUniformLocation(snakeShaderProgram, "offsetY");
-
-		glUseProgram(snakeShaderProgram);
-
-		glUniform1f(offsetLocationX, headBodyPart->posX);
-		glUniform1f(offsetLocationY, headBodyPart->posY);
-
-		glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-
-		for (int i = 1; i < snakeBody.size(); i++) {
-			SnakeBodyPart &bodyPart = snakeBody[i];
-
-			const float movementStep = deltaTime / 2.0f;
-
-			if (bodyPart.nextPositions.size() > 0) {
-
-				Position firstPos = bodyPart.nextPositions[0];
-
-				bodyPart.posX = MoveToward(bodyPart.posX, firstPos.x, movementStep);
-				bodyPart.posY = MoveToward(bodyPart.posY, firstPos.y, movementStep);
-
-				if (bodyPart.posX == firstPos.x && bodyPart.posY == firstPos.y)
-				{
-					bodyPart.nextPositions.erase(bodyPart.nextPositions.begin());
-				}
-			}
-			else
-			{
-				SnakeBodyPart& lastBody = snakeBody[i - 1];
-
-				Position backward { -snakeSpeedX, -snakeSpeedY };
-				if (i > 1)
-				{
-					backward.x = Sign(lastBody.posX - snakeBody[i - 2].posX);
-					backward.y = Sign(lastBody.posY - snakeBody[i - 2].posY);
-				}
-
-				bodyPart.posX = lastBody.posX + backward.x * snakeScale * 2;
-				bodyPart.posY = lastBody.posY + backward.y * snakeScale * 2;
-			}
-
-			//render body part
-			glUniform1f(offsetLocationX, bodyPart.posX);
-			glUniform1f(offsetLocationY, bodyPart.posY);
-			glDrawArrays(GL_TRIANGLE_FAN, 4, 4);
-
-		}
+		glUniform1f(fractalMovement, time);
+		glUniform3f(colorLocation, 1.0f, 0.8f, 0.3f);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glBindVertexArray(vao);
 
-		SDL_GL_SwapWindow(Window);
+		SDL_GL_SwapWindow(Window); // Swapbuffer
 	}
 
 	// Quit
@@ -354,27 +155,6 @@ int main(int argc, char* argv[])
 	SDL_GL_DeleteContext(Context);
 
 	return 0;
-}
-
-float MoveToward(float origin, float target, float amount)
-{
-	if(origin == target) return origin;
-	if(origin < target)
-	{
-		return min(origin + amount, target);
-	}
-
-	return max(origin - amount, target);
-}
-
-float Sign(float value)
-{
-	if(value == 0.0f) return 0.0f;
-	return value < 0.0f ? -1.0f : 1.0f;
-}
-
-float Distance(float ax, float ay, float bx, float by) {
-	return sqrt(pow(ax - bx, 2) + pow(ay - by, 2));
 }
 
 string LoadShader(string fileName) {

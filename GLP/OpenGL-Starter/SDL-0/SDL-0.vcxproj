@@ -85,10 +85,10 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="appleFragment.shader" />
-    <None Include="snakeFragment.shader" />
-    <None Include="snakeVertex.shader" />
-    <None Include="appleVertex.shader" />
+    <None Include="blinkFragment.shader" />
+    <None Include="fractalFragment.shader" />
+    <None Include="simpleVertex.shader" />
+    <None Include="fractalVertex.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

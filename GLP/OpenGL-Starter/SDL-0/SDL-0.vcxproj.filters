@@ -20,16 +20,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="snakeVertex.shader">
+    <None Include="simpleVertex.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
-    <None Include="snakeFragment.shader">
+    <None Include="blinkFragment.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
-    <None Include="appleFragment.shader">
+    <None Include="fractalFragment.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
-    <None Include="appleVertex.shader">
+    <None Include="fractalVertex.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
   </ItemGroup>
