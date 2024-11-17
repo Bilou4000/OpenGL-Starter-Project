@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	int width = 1280;
 	int height = 720;
 	unsigned int center = SDL_WINDOWPOS_CENTERED;
-	SDL_Window* Window = SDL_CreateWindow("My window", center, center, width, height, SDL_WINDOW_OPENGL);
+	SDL_Window* Window = SDL_CreateWindow("FRACTAL", center, center, width, height, SDL_WINDOW_OPENGL);
 	SDL_GLContext Context = SDL_GL_CreateContext(Window);
 
 	/////////SETTING UP OPENGL WITH GLEW///
@@ -129,11 +129,20 @@ int main(int argc, char* argv[])
 
 		time += 0.001f;
 
+		// shifting color like rgb
+		//float speed = 0.5f;
+		//float timeValue = ((float) SDL_GetTicks() / 1000);
+		//float redColor = (sin(timeValue * speed) / 2.0f) + 0.5f;
+		//float greenColor = (sin(timeValue * speed + 2) / 2.0f) + 0.5f;
+		//float blueColor = (sin(timeValue * speed + 4) / 2.0f) + 0.5f;
+
 		//DRAW
 		float fractalMovement = glGetUniformLocation(fractalShaderProgram, "time");
+		int colorLocation = glGetUniformLocation(fractalShaderProgram, "colorShift");
 		glUseProgram(fractalShaderProgram);
 
 		glUniform1f(fractalMovement, time);
+		glUniform3f(colorLocation, 1.0f, 0.8f, 0.3f);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glBindVertexArray(vao);
