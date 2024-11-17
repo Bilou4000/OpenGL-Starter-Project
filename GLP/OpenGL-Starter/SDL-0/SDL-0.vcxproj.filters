@@ -23,13 +23,13 @@
     <None Include="simpleVertex.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
-    <None Include="simpleFragment.shader">
-      <Filter>Fichiers de ressources</Filter>
-    </None>
     <None Include="blinkFragment.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
-    <None Include="staticVertex.shader">
+    <None Include="fractalFragment.shader">
+      <Filter>Fichiers de ressources</Filter>
+    </None>
+    <None Include="fractalVertex.shader">
       <Filter>Fichiers de ressources</Filter>
     </None>
   </ItemGroup>
